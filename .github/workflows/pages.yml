@@ -1,0 +1,43 @@
+name: 手动发布 GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出源码
+        uses: actions/checkout@v4
+      - name: 配置 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+      - name: 测试、构建并校验离线页面
+        run: npm run check
+      - name: 上传 dist 目录
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署 Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

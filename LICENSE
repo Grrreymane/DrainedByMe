@@ -1,0 +1,36 @@
+许可范围声明
+
+下列 MIT License 仅适用于本项目以下目录中的项目代码及其修改：
+
+- src/engine/
+- src/ui/
+- scripts/
+- tests/
+
+这不是整个仓库的统一 MIT 授权。src/data/ 中的剧情与内容数据、
+src/assets/ 中的插图、人物设定、文档及上述目录以外的文件不因本许可
+自动获得授权；具体边界见 ASSET-LICENSE.md。第三方材料如另附许可，
+仍按其原有许可处理。代码被内嵌于单文件 HTML 或打包为 ZIP 不会扩大
+本许可到剧情、图片、商标或其他未涵盖材料。
+
+MIT License
+
+Copyright (c) 2026 TOKEN / AFTERHOURS contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
