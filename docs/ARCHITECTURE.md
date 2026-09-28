@@ -14,7 +14,7 @@ HTML / CSS / JavaScript 本地游戏，无真实模型调用、账户、云后�
 | `src/data/story.js` | 四晚开场与 `openings`，Codex、Claude 各四次来访，Cursor、WorkBuddy 各两次来访，三档补给与六结局；UMD 导出 `AfterhoursStory` |
 | `src/ui/app.js` | 纸面封面、初版三栏视觉骨架、逐句阅读、选人/回应/补给、纯看画面、浏览器存档、回看与事件 CG 收藏 |
 | `src/ui/styles.css` | 米白纸纹、红棕强调、封面粉色花卉线、场景与对白连体卡、渐进披露右栏、48px 控件、窄屏重排与减弱动效 |
-| `src/assets/` | 四张母版驱动的真实 RGBA 透明立绘、一张公寓背景、十二张独立事件图（其中十一张为 2026-09-27 的 visual-v8，`claude_deep` 保留用户原稿场景）和一张 LightAI 封面；十八图均已审看 |
+| `src/assets/` | 四张母版驱动的真实 RGBA 透明立绘、一张公寓背景、十二张独立事件图（其中十一张为 2026-09-27 的 visual-v8，`claude_deep` 保留用户原稿场景）、一张 LightAI 封面，以及六张结局 CG `ending_*`（2026-09-27 的 visual-v9）；二十四图均已审看 |
 | `scripts/` | 本地开发服务、构建、静态验证、源码包；入口保持不变 |
 | `tests/` | 已有四晚规则、存档、六结局等 Node 用例与浏览器回归入口；文件存在不代表本版验收通过 |
 | `outputs/` | 本地生成产物；旧文件不代表当前源码已构建验收 |
@@ -177,13 +177,15 @@ app namespace 为 **`token-four-nights-v4`**，localStorage 使用：
 
 ## 7. 事件图、收藏与声音
 
-事件图键为 `cgMap[id][mode] = id + '_' + mode`。正常 `supplement` 显示对应事件图；非饥饿 `ending` 可复用最后一次事件图，并标明不是新增结局图。图片加载失败退回该角色 portrait，显示“代示”，不据此宣称已有 CG。
+事件图键为 `cgMap[id][mode] = id + '_' + mode`；结局图键为 `endingCg[endingId] = 'ending_' + endingId`（`hunger`、`household`、`codex`、`claude`、`cursor`、`workbuddy` 六张）。正常 `supplement` 显示对应事件图；`ending` 阶段一律显示该结局自己的结局 CG（饥饿结局也是），不再重放最后一晚的事件图或封面。图片加载失败时事件图退回该角色 portrait、两人结局图退回那位室友的 portrait、`household` 退回封面群像，均显示“代示”；`hunger` 结局图缺失时只留空房间并说明“尚未提供”，不据此宣称已有 CG。
 
-收藏保存为 `{version:2,cgs:[...]}`，独立于当前局。只有正常补给阶段、图片已经成功载入、在可视区域且无弹窗遮挡等检查通过时才解锁；调用 `commit` 本身不解锁。读档不清空收藏；导入结局档不会自动填满收藏，导入到正常补给场景后仍须实际载入可见图片。
+收藏保存为 `{version:2,cgs:[...]}`，独立于当前局；`cgs` 里可以同时有十二个事件键和六个 `ending_*` 键，旧记录只含事件键时照常读取（格式与版本号不变，未知键被忽略）。事件图只有正常补给阶段、结局图只有后记阶段，且图片已经成功载入、在可视区域且无弹窗遮挡等检查通过时才解锁；回忆相册先列十二张事件图，再单列一行六张结局画面，计数写作“事件 x / 12 · 结局 y / 6”。调用 `commit` 本身不解锁。读档不清空收藏；导入结局档不会自动填满收藏，导入到正常补给场景后仍须实际载入可见图片。
 
-资产制作约定：四 portrait 全部独立重绘为 2:3 角色图，通过 LightAI skill `_common.create_async_task` 调用 nano-banana pro / `gemini-3-pro-image-preview`；再逐张以 `BiRefNet-HR-matting` 独立去背景（`expand=-1`、`blur_radius=0.5`），透明 PNG 经 Pillow 保留 Alpha 转 WebP。十二事件逐张以 2K 档、16:9 独立生成，不再三联裁切；另绘一张 16:9 公寓背景。加上独立封面，现行运行时为 **四立绘＋十二事件＋一背景＋一封面＝十八项**。visual-v7更新Codex/WorkBuddy两张自然动作立绘及十二CG，WorkBuddy严格按母版保留少量浅淡短胡；封面CSS、Claude/Cursor立绘、背景与剧情规则不改。十二新CG以整图等比容纳到2560×1440，不裁边。
+资产制作约定：四 portrait 全部独立重绘为 2:3 角色图，通过 LightAI skill `_common.create_async_task` 调用 nano-banana pro / `gemini-3-pro-image-preview`；再逐张以 `BiRefNet-HR-matting` 独立去背景（`expand=-1`、`blur_radius=0.5`），透明 PNG 经 Pillow 保留 Alpha 转 WebP。十二事件逐张以 2K 档、16:9 独立生成，不再三联裁切；另绘一张 16:9 公寓背景。加上独立封面，visual-v8 时运行时为 **四立绘＋十二事件＋一背景＋一封面＝十八项**；visual-v9 起另加六张结局 CG，现行为 **二十四项**。visual-v7更新Codex/WorkBuddy两张自然动作立绘及十二CG，WorkBuddy严格按母版保留少量浅淡短胡；封面CSS、Claude/Cursor立绘、背景与剧情规则不改。十二新CG以整图等比容纳到2560×1440，不裁边。
 
 **visual-v8（2026-09-27）**：按 v3/v4 新剧情重画十一张事件图——`codex_shallow/deep/greedy`、`claude_shallow/greedy`、`cursor_shallow/deep/greedy`、`workbuddy_shallow/deep/greedy`；`claude_deep` 与用户原稿场景一致，保留 v7 成品。仍经 LightAI skill 调用 nano-banana pro，16:9、2K 档，每键独立生成，必要时做图像编辑修正；方向为有温度但全程穿好衣服的成年亲近。源图 2752×1536 整图等比缩到 2560×1429，上下各约 5 像素以镜像边缘补齐到 2560×1440（`codex_greedy` 为去掉模型自绘边框后两侧各修 32 像素背景），RGB WebP quality 93、method 6。十八项运行时资产的尺寸、摘要、Alpha 与十一张新图的审看要点见 `outputs/visual-v8-qa.json`；被替换的 v7 成品另存于 `_archive/2026-09-27/src-assets-v7/`（不入库）。2K请求档位不等于实际像素尺寸。
+
+**visual-v9-endings（2026-09-27）**：新增六张结局 CG `ending_hunger/household/codex/claude/cursor/workbuddy`，温馨方向，全员穿戴整齐。仍经 LightAI skill 调用 nano-banana pro（`gemini-3-pro-image-preview`），16:9、2K 档，参考图为四人身份表、零的造型裁图和两张既有 CG 画风对照；必要时做图像编辑修正。源图同样整图等比缩放、镜像补边到 2560×1440，RGB WebP quality 93、method 6。审看记录在 `.cache/art/visual-v9-endings/review.json`，总览 `outputs/art-v9-ending-overview.jpg`。
 
 这是离线制作链，不是游戏运行时依赖。pipeline 响应和签名 URL 只留 `.cache/`，不得进入源码包、离线 HTML 或可分发清单；项目外技能不复制入库。来源不代表厂商/画师官方创作、授权、合作或商业无忧，权利边界仍见 `ASSET-LICENSE.md`。
 
@@ -211,7 +213,7 @@ Node.js >=20，沿用原 npm scripts：
 
 ## 9. 验证边界
 
-现行快照已接入四张母版驱动透明立绘和一张独立 LightAI 封面；连同客厅与十二事件图共十八项。最终构建、测试与打包必须在全部输入冻结后执行。
+现行快照已接入四张母版驱动透明立绘和一张独立 LightAI 封面；连同客厅、十二事件图与六张结局图共二十四项。最终构建、测试与打包必须在全部输入冻结后执行。
 
 最终验收在源码、文档与素材冻结后针对同一快照完成，特别检查：
 
@@ -221,7 +223,7 @@ Node.js >=20，沿用原 npm scripts：
 - 纯看画面切换前后的 state、cursor、readCount 和花费不变，隐藏时键盘不跳读、不触发选择；
 - 四立绘真实 Alpha：逐张 Alpha=0 透明像素 >=12%，且保有 Alpha=255 实体与完整主体；检查 PNG 与 WebP 转换前后，不接受 CSS 伪透明；
 - 十二事件独立生成、实际尺寸逐张 >=1600×900 且 `width × 9 === height × 16`，背景为新 16:9 单图，不能以 CSS 拉伸满足标准；
-- 十八项清单、完整解码、内嵌字节/摘要、离线图片、48px 控件、焦点、小屏、存储降级和许可附录；
+- 二十四项清单、完整解码、内嵌字节/摘要、离线图片、48px 控件、焦点、小屏、存储降级和许可附录；
 - 白名单源码包不带 `.cache/`、pipeline 响应、签名 URL 或外部技能。
 
 `scripts/build.mjs` 的 manifest 当前只记录版本、资产字节/摘要/MIME 与产物和文档快照，不记录源图尺寸或 Alpha。像素、Alpha 与资产键的现行关联记录见 `outputs/visual-v8-qa.json`；2K 请求档位不作为实际尺寸证据。

@@ -2,6 +2,13 @@
 
 当前本地开发版本为 **v0.3.0**。日期表示本地变更记录，不表示 Git 标签、远程发布或线上部署；制作流程、源码实现与最终验收分别记录。
 
+## 结局 CG（visual-v9）— 2026-09-27
+
+- **六张结局 CG**：`ending_hunger`、`ending_household`、`ending_codex`、`ending_claude`、`ending_cursor`、`ending_workbuddy`，温馨画面、全员穿戴整齐；经 LightAI（nano-banana pro）生成，12 个服务任务（6 首稿、6 次重画或局部编辑），成品 2560×1440 RGB WebP（quality 93、method 6）。审看记录见 `docs/design/art-log.md` 第 7 节。
+- **剧情数据**：`src/data/story.js` 在 `cgMap` 旁新增 `endingCg`；剧情文字未改（含 `supplements.claude.deep`）。
+- **界面**：后记一律显示本结局的 CG（饥饿结局也是），不再重放最后一晚的补给 CG 或封面；缺图时两人结局退回那位室友的立绘、大家的后记退回封面群像、饥饿结局只留空房间，都标明“尚未提供”。结局 CG 在后记里实际载入、可见时收进相册（与事件图同样的规则）；回忆相册在十二张事件图之后单列一行“结局画面”，计数写作“事件 x / 12 · 结局 y / 6”。收藏存储格式不变，只是允许新的 `ending_*` 键。
+- **构建与测试**：运行时资产 18 → 24；`scripts/build.mjs` / `verify.mjs` 提示与计数同步。内容测试新增结局 CG 映射检查；浏览器测试在每条路线的后记开头断言显示并收藏该结局 CG，最后断言收齐 12 + 6 张，并打开一张结局图查看。
+
 ## 归档补充 — 2026-09-27
 
 - 按用户要求归档到 `_archive/2026-09-27/`（移动，未删除）：`.cache/art/visual-v7`（上一版美术制作记录）、依赖它的一次性脚本 `.cache/release-v3-check.py`、`spec/tracking`（停在 0.2.0 旧数值的台账）、`src/data/sources.js`（游戏未使用的旧来源模块）。

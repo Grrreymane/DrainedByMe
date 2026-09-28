@@ -190,6 +190,15 @@ test('CG 映射恰好包含十二个唯一事件键，不以人物图代替事�
   assert(events.every(key => ![...ids, 'room'].includes(key)));
 });
 
+test('结局 CG 映射恰好六个 ending_<id> 键，与事件图和人物图互不重复', () => {
+  keys(story.endingCg, endingIds, 'endingCg');
+  const endingKeys = endingIds.map(id => story.endingCg[id]);
+  endingIds.forEach(id => assert.equal(story.endingCg[id], `ending_${id}`));
+  assert.equal(new Set(endingKeys).size, 6);
+  const events = ids.flatMap(id => modes.map(mode => story.cgMap[id][mode]));
+  assert(endingKeys.every(key => !events.includes(key) && ![...ids, 'room', 'cover'].includes(key)));
+});
+
 test('可玩文本禁用词与长度检查不扫描历史文档、来源或规则', async () => {
   const { playableTexts } = await import('../scripts/verify.mjs');
   const patterns = [/不是[^。！？\n]*?而是/u, /仿佛/u, /总而言之/u, /令人窒息的张力/u, /不禁/u, /忍不住/u];

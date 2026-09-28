@@ -24,6 +24,11 @@
   const phaseNames = { intro: '初次见面', common: '夜晚的开场', select: '今晚，想和谁说话', visit: '两个人的片刻', choice: '轮到你说了', reply: '话音落下', mode: '把需要说清楚', supplement: '灯下的片刻', morning: '夜晚之后', ending: '故事的后记' };
   const cgKeys = ids.flatMap(id => modes.map(mode => id + '_' + mode));
   const endingIds = ['hunger', 'household', ...ids];
+  // 结局 CG：后记里显示，读到并实际看见时收进相册，排在 12 张事件图之后。
+  const endingCgKeys = endingIds.map(id => 'ending_' + id);
+  const galleryKeys = [...cgKeys, ...endingCgKeys];
+  // 结局 CG 缺图时的代示：两人结局用那位室友的人物图，「明天也在这里」用封面群像，饥饿结局只留空房间。
+  const endingFallback = id => id === 'household' ? 'cover' : id === 'hunger' ? '' : id;
   const offstage = 'offstage';
   const failedAssets = new Set();
   const narrow = () => matchMedia('(max-width: 1000px)').matches;
@@ -89,6 +94,7 @@
       const ending = D.endings?.[id];
       assert(ending && text(ending.title) && text(ending.subtitle), '结局资料缺失：' + id);
       lines(ending.lines, 'endings.' + id);
+      assert(D.endingCg?.[id] === 'ending_' + id, '结局 CG 映射必须使用 ending_' + id);
     });
   }
   let schemaError = '';
@@ -123,7 +129,7 @@
   }
   try {
     const saved = JSON.parse(readStorage('collection') || legacyCollection() || 'null');
-    if (saved?.version === 2 && Array.isArray(saved.cgs)) collection = [...new Set(saved.cgs.filter(key => cgKeys.includes(key)))];
+    if (saved?.version === 2 && Array.isArray(saved.cgs)) collection = [...new Set(saved.cgs.filter(key => galleryKeys.includes(key)))];
   } catch (_) { /* 损坏的收藏记录不阻止阅读，也不覆盖旧记录。 */ }
   // 已见结局与已读对白只是阅读便利，和存档、收藏分开保存；损坏时当作空白。
   try {
@@ -669,9 +675,8 @@
   }
   function visualForScene() {
     if (view.phase === 'supplement' && state.lastResult.energyAfter > 0) return { key: D.cgMap[state.lastResult.character][state.lastResult.mode], person: state.lastResult.character, event: true };
-    // 「明天也在这里」是四个人的后记：用封面群像，不再重放某一个人的补给 CG。
-    if (view.phase === 'ending' && state.endingId === 'household') return { key: 'cover', person: null, event: true, group: true };
-    if (view.phase === 'ending' && state.endingId !== 'hunger' && state.lastResult?.energyAfter > 0) return { key: D.cgMap[state.lastResult.character][state.lastResult.mode], person: state.lastResult.character, event: true, reused: true };
+    // 后记一律显示这个结局自己的 CG（饥饿结局也是），不再重放最后一晚的补给 CG。
+    if (view.phase === 'ending') return { key: D.endingCg[state.endingId], person: null, event: true, ending: state.endingId };
     // 「那天晚上，走廊」只有关着的门：空房间，不让前面饭桌上的人留在台上。
     if (view.phase === 'common' && unlockLines(state).length && view.cursor >= readingLines(state, 'common').length - unlockLines(state).length) return { key: null, person: null, event: false };
     // 室友说完话后的一两句旁白，人还站在原地，不要每句都闪一下空房间。
@@ -747,6 +752,7 @@
   }
   function sceneArtwork() {
     const visual = visualForScene();
+    const endingSpare = visual.ending ? endingFallback(visual.ending) : '';
     const fallback = visual.event && failedAssets.has(visual.key);
     const starving = state.energy <= 0 && ['supplement', 'morning', 'ending'].includes(view.phase);
     const visualKey = (visual.key || 'room') + (visual.event ? ':event' : '');
@@ -759,10 +765,12 @@
     let figure = '';
     // 换人时交叉淡化：上一位先在下面淡出，新的一位淡入，不再闪过空房间。减少动态效果时不留旧图。
     if (entering && leaving && leaving !== visual.key && !calm()) figure += image(leaving, 'character-art is-leaving', '');
-    if (visual.group) figure += image('cover', 'event-art group-art' + enter, '四位室友的合照');
-    else if (shown) figure += image(visual.key, (visual.event && !fallback ? 'event-art' : 'character-art') + enter, visual.event && !fallback ? D.characters[visual.person].name + ' · ' + modeNames[state.lastResult.mode] + '事件插图' : D.characters[visual.person].name + ' 的人物图', visual.event ? visual.person : '');
+    if (visual.ending) {
+      if (!fallback) figure += image(visual.key, 'event-art' + enter, '结局插图 · ' + D.endings[visual.ending].title, endingSpare);
+      else if (endingSpare) figure += image(endingSpare, (endingSpare === 'cover' ? 'event-art group-art' : 'character-art') + enter, endingSpare === 'cover' ? '四位室友的合照（结局 CG 尚未提供）' : D.characters[endingSpare].name + ' 的人物图（结局 CG 尚未提供）');
+    } else if (shown) figure += image(visual.key, (visual.event && !fallback ? 'event-art' : 'character-art') + enter, visual.event && !fallback ? D.characters[visual.person].name + ' · ' + modeNames[state.lastResult.mode] + '事件插图' : D.characters[visual.person].name + ' 的人物图', visual.event ? visual.person : '');
     // 事件图上不再压说明：补给档名移到对白框的行号前；只有缺图代示时才在画面上说明。
-    const caption = visual.event && fallback ? '人物图代示 · 本场景 CG 尚未提供' : '';
+    const caption = visual.event && fallback ? (visual.ending && !endingSpare ? '本结局 CG 尚未提供' : endingSpare === 'cover' ? '封面群像代示 · 本结局 CG 尚未提供' : '人物图代示 · 本场景 CG 尚未提供') : '';
     return '<div class="scene-art' + (visual.event && !fallback ? ' has-event' : '') + (starving ? ' is-starving' : '') + '"' + (morningLight() ? ' data-daypart="morning"' : '') + '>' + image('room', 'scene-background', '合租房') + figure + (caption ? '<p class="art-caption">' + caption + '</p>' : '') + '</div>';
   }
   function sceneHeading() {
@@ -1020,16 +1028,19 @@
     scheduleAuto();
   }
   function unlockVisibleCG(img) {
-    if (onCover || dialog.open || document.hidden || !state || view.phase !== 'supplement' || state.energy <= 0 || !img.isConnected || !img.complete || img.naturalWidth <= 0) return;
+    if (onCover || dialog.open || document.hidden || !state || !img.isConnected || !img.complete || img.naturalWidth <= 0) return;
+    // 补给 CG 只在正常补给时解锁（饥饿片段没有 CG）；结局 CG 在后记里解锁，饥饿结局也算。
+    const supply = view.phase === 'supplement' && state.energy > 0;
+    if (!supply && !(view.phase === 'ending' && state.endingId)) return;
     const rect = img.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0 || rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth) return;
-    const key = D.cgMap[state.lastResult.character][state.lastResult.mode];
+    const key = supply ? D.cgMap[state.lastResult.character][state.lastResult.mode] : D.endingCg[state.endingId];
     if (img.dataset.asset !== key || !img.classList.contains('event-art') || collection.includes(key)) return;
     // 收藏只在当前场景图像实际解码、阅读场景可见后解锁，commit 本身不解锁。
     const disk = readStorage('collection');
     try {
       const saved = JSON.parse(disk || 'null');
-      if (saved?.version === 2 && Array.isArray(saved.cgs)) collection = [...new Set([...collection, ...saved.cgs.filter(item => cgKeys.includes(item))])];
+      if (saved?.version === 2 && Array.isArray(saved.cgs)) collection = [...new Set([...collection, ...saved.cgs.filter(item => galleryKeys.includes(item))])];
     } catch (_) { /* 继续保留当前内存中的收藏。 */ }
     collection = [...new Set([...collection, key])];
     writeStorage('collection', JSON.stringify({ version: 2, cgs: collection }));
@@ -1052,15 +1063,18 @@
   document.addEventListener('error', event => {
     const img = event.target;
     if (!(img instanceof HTMLImageElement) || !img.dataset.asset) return;
-    failedAssets.add(img.dataset.asset);
+    const failedKey = img.dataset.asset;
+    failedAssets.add(failedKey);
     const fallback = img.dataset.fallback;
     if (fallback) {
       img.dataset.asset = fallback;
       delete img.dataset.fallback;
       img.src = assetURL(fallback);
-      img.alt = (D.characters[fallback]?.name || fallback) + ' 的人物图（场景 CG 尚未提供）';
-      img.classList.remove('event-art');
-      img.classList.add('character-art');
+      const group = fallback === 'cover';
+      img.alt = group ? '四位室友的合照（结局 CG 尚未提供）' : (D.characters[fallback]?.name || fallback) + ' 的人物图（场景 CG 尚未提供）';
+      // 封面群像仍按整幅画铺满；人物图按立绘摆放。
+      if (group) img.classList.add('group-art');
+      else { img.classList.remove('event-art'); img.classList.add('character-art'); }
       const scene = img.closest('.scene-art');
       if (scene) {
         scene.classList.remove('has-event');
@@ -1070,11 +1084,18 @@
           caption.className = 'art-caption';
           scene.appendChild(caption);
         }
-        caption.textContent = '人物图代示 · 本场景 CG 尚未提供';
+        caption.textContent = group ? '封面群像代示 · 本结局 CG 尚未提供' : '人物图代示 · 本场景 CG 尚未提供';
       }
       const gallery = img.closest('.gallery-view');
-      if (gallery) gallery.querySelector('.gallery-caption').textContent = '本地未找到这张事件图，暂用人物图代示。';
+      if (gallery) gallery.querySelector('.gallery-caption').textContent = '本地未找到这张' + (failedKey.startsWith('ending_') ? '结局图' : '事件图') + '，暂用' + (group ? '封面群像' : '人物图') + '代示。';
     } else {
+      const scene = failedKey.startsWith('ending_') ? img.closest('.scene-art') : null;
+      if (scene && img.classList.contains('event-art')) {
+        scene.classList.remove('has-event');
+        if (!scene.querySelector('.art-caption')) scene.insertAdjacentHTML('beforeend', '<p class="art-caption">本结局 CG 尚未提供</p>');
+      }
+      const gallery = failedKey.startsWith('ending_') ? img.closest('.gallery-view') : null;
+      if (gallery) gallery.querySelector('.gallery-caption').textContent = '本地未找到这张结局图。';
       img.hidden = true;
       img.parentElement?.classList.add('image-missing');
     }
@@ -1196,14 +1217,22 @@
       const hint = endingHints[id] || '第四晚去找 ' + D.characters[id].name + '，之前见过、心意够';
       return '<li class="' + (seen ? 'is-seen' : '') + '"><strong>' + (seen ? esc(D.endings[id].title) : '？？？') + '</strong><small>' + esc(hint) + '</small></li>';
     }).join('') + '</ul>';
-    openModal('回忆相册', '<p>已收藏 ' + collection.length + ' / 12 张夜晚的画面。读到补给场景时收进这里，新开一局也不会丢。</p><div class="gallery-grid">' + cgKeys.map((key, index) => {
+    const eventCount = collection.filter(key => cgKeys.includes(key)).length;
+    const endingCount = collection.filter(key => endingCgKeys.includes(key)).length;
+    const endingCards = '<h3 class="gallery-section">结局画面 ' + endingCount + ' / ' + endingCgKeys.length + '</h3><div class="gallery-grid is-endings">' + endingIds.map((id, index) => {
+      const key = endingCgKeys[index];
+      const unlocked = collection.includes(key);
+      const hint = endingsSeen.includes(id) ? '再读一次这个后记就能收进来' : '还没见过';
+      return '<button class="gallery-card' + (unlocked ? ' unlocked' : '') + '" data-action="gallery-image" data-key="' + key + '"' + (!unlocked ? ' disabled' : '') + '>' + (unlocked ? image(key, 'gallery-thumb', '已收藏的结局图', endingFallback(id)) : '<span class="locked-art" aria-hidden="true">—</span>') + '<span class="eyebrow">结局 ' + String(index + 1).padStart(2, '0') + '</span><strong>' + (unlocked ? esc(D.endings[id].title) : '？？？') + '</strong>' + (unlocked ? '' : '<small class="gallery-hint">' + hint + '</small>') + '</button>';
+    }).join('') + '</div>';
+    openModal('回忆相册', '<p>已收藏 事件 ' + eventCount + ' / ' + cgKeys.length + ' · 结局 ' + endingCount + ' / ' + endingCgKeys.length + '。读到补给场景或后记时收进这里，新开一局也不会丢。</p><div class="gallery-grid">' + cgKeys.map((key, index) => {
       const unlocked = collection.includes(key);
       const split = key.lastIndexOf('_');
       const id = key.slice(0, split);
       const mode = key.slice(split + 1);
       const hidden = C.constants.characters[id].hidden;
       return '<button class="gallery-card' + (unlocked ? ' unlocked' : '') + '" data-action="gallery-image" data-key="' + key + '"' + (!unlocked ? ' disabled' : '') + '>' + (unlocked ? image(key, 'gallery-thumb', '已收藏的事件图', id) : '<span class="locked-art" aria-hidden="true">' + (hidden ? '？' : '—') + '</span>') + '<span class="eyebrow">片刻 ' + String(index + 1).padStart(2, '0') + '</span><strong>' + esc(D.characters[id].name + ' · ' + modeNames[mode]) + '</strong>' + (unlocked ? '' : '<small class="gallery-hint">' + (hidden ? '需先让零注意到' + pronoun(id) : '还没见过') + '</small>') + '</button>';
-    }).join('') + '</div>' + endings);
+    }).join('') + '</div>' + endingCards + endings);
     if (toEndings) {
       const section = dialog.querySelector('.gallery-section');
       section.tabIndex = -1;
@@ -1212,9 +1241,11 @@
     }
   }
   function showGalleryImage(key) {
-    if (!collection.includes(key) || !cgKeys.includes(key)) return;
-    const id = key.slice(0, key.lastIndexOf('_'));
-    openModal('回忆画面', '<div class="gallery-view">' + image(key, 'gallery-full', '已收藏的事件插图', id) + '<p class="gallery-caption">' + (failedAssets.has(key) ? '本地未找到这张事件图，暂用人物图代示。' : '读到过的一晚。这是事件图，不是新增结局图。') + '</p></div><div class="modal-actions is-sticky"><button data-action="open-gallery">回到相册</button></div>');
+    if (!collection.includes(key) || !galleryKeys.includes(key)) return;
+    const ending = endingCgKeys.includes(key) ? key.slice('ending_'.length) : '';
+    const id = ending ? endingFallback(ending) : key.slice(0, key.lastIndexOf('_'));
+    const missing = ending ? '本地未找到这张结局图' + (id ? '，暂用' + (id === 'cover' ? '封面群像' : '人物图') + '代示。' : '。') : '本地未找到这张事件图，暂用人物图代示。';
+    openModal('回忆画面', '<div class="gallery-view">' + image(key, 'gallery-full', ending ? '已收藏的结局插图' : '已收藏的事件插图', id) + '<p class="gallery-caption">' + (failedAssets.has(key) ? missing : ending ? '后记 · ' + esc(D.endings[ending].title) : '读到过的一晚。这是补给场景的事件图。') + '</p></div><div class="modal-actions is-sticky"><button data-action="open-gallery">回到相册</button></div>');
   }
   function routeAction(button) {
     if (button.disabled) return;
