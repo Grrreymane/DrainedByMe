@@ -1,0 +1,17 @@
+{
+  "name": "drained-by-me",
+  "version": "0.3.0",
+  "private": true,
+  "description": "An offline four-night visual novel with four characters and six endings.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node scripts/serve.mjs --port 4173",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/core.test.cjs tests/content.test.cjs",
+    "verify": "node scripts/verify.mjs",
+    "check": "npm test && npm run build && npm run verify",
+    "package": "node scripts/package.mjs",
+    "test:e2e": "node tests/browser.cjs"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

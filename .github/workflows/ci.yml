@@ -1,0 +1,25 @@
+name: 测试与离线构建
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出源码
+        uses: actions/checkout@v4
+      - name: 配置 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 运行 Node 测试
+        run: npm test
+      - name: 构建单文件与设计档案
+        run: npm run build
+      - name: 验证离线资产与发行文件
+        run: npm run verify

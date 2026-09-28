@@ -1,0 +1,210 @@
+{
+  "title": "完蛋，我被 Agent 包围了",
+  "version": 4,
+  "characterIds": [
+    "codex",
+    "claude",
+    "cursor",
+    "workbuddy"
+  ],
+  "modes": [
+    "shallow",
+    "deep",
+    "greedy"
+  ],
+  "endingIds": [
+    "hunger",
+    "household",
+    "codex",
+    "claude",
+    "cursor",
+    "workbuddy"
+  ],
+  "coreGlobal": "AfterhoursCore",
+  "storyGlobal": "AfterhoursStory",
+  "constants": {
+    "nights": 4,
+    "initialEnergy": 28,
+    "maxEnergy": 60,
+    "drains": [
+      20,
+      25,
+      30,
+      35
+    ],
+    "characters": {
+      "codex": {
+        "caps": [
+          90,
+          90,
+          90,
+          90
+        ],
+        "regen": 0,
+        "resets": 1,
+        "hidden": false,
+        "nourish": 1
+      },
+      "claude": {
+        "caps": [
+          30,
+          38,
+          46,
+          54
+        ],
+        "regen": 100,
+        "resets": 0,
+        "hidden": false,
+        "nourish": 1
+      },
+      "cursor": {
+        "caps": [
+          55,
+          55,
+          55,
+          55
+        ],
+        "regen": 12,
+        "resets": 0,
+        "hidden": true,
+        "nourish": 1
+      },
+      "workbuddy": {
+        "caps": [
+          110,
+          110,
+          110,
+          110
+        ],
+        "regen": 20,
+        "resets": 0,
+        "hidden": true,
+        "nourish": 0.5
+      }
+    },
+    "unlockAfter": [
+      "codex",
+      "claude"
+    ],
+    "costs": {
+      "shallow": 10,
+      "deep": 26
+    }
+  },
+  "coreAPI": {
+    "constants": "深度冻结的 constants 对象，内容与本合同 constants 完全一致（v4：maxEnergy 60、drains 逐晚递增、每位角色 nourish 补给系数）",
+    "ids": "冻结数组 ['codex','claude','cursor','workbuddy']",
+    "createState": "() => 全新独立 state，初始值与 stateRequired 完全一致",
+    "select": "(state,id) => newState；仅 select 阶段，角色未隐藏（见 unlocked）、未被本晚锁定且 tokens>0；进入 talk，设置 selected；不增加 visits 或 affinity",
+    "choose": "(state,index) => newState；仅 talk 阶段，index 只能为数字 0/1；进入 mode，设置 choice；此时不增加 affinity",
+    "preview": "(state,id,mode) => {allowed,reason,cost,feed,drain,wasted,energyAfter,fatal,warning,tokensAfter,blockedNextNight,resetNextNight}；只允许 select/talk/mode 预览，不要求 id 等于 selected，不改变 state 或 actions；非法角色、模式、阶段返回 allowed:false 而非抛错；隐藏角色 reason 为「零现在眼里只有 Codex 和 Claude。」",
+    "commit": "(state,mode) => newState；仅 mode 阶段，对 selected 使用相同 preview 计算；energy=preview.energyAfter；greedy 清零 tokens，resetNextNight 时 resets+1 且不锁定，blockedNextNight 时 blockedNight=night+1；visits+1，affinity+=1+(choice===0?1:0)；进入 result，night 不推进，selected/choice 保留；写入 lastResult 与 history（含 feed 与 wasted），即使 energy 归零也暂不进入结局",
+    "advance": "(state) => newState；仅 result 阶段；energy<=0 优先 ended/hunger；否则第四晚进入 ended，最后所选角色 visits>=2 且 affinity>=3 则 endingId=角色 id，否则 household；其余推进一晚，按 recovery 更新 cap 与 tokens，进入 select，selected/choice 置 null，保留 lastResult",
+    "serialize": "(state) => JSON 字符串 {format:four-nights-v4,state}；先执行 validateState，拒绝非法状态",
+    "deserialize": "(text) => 全新 state；UTF-8 字节大小<=131072；严格 envelope、字段、类型、原型、值域与 actions 重放校验；明确拒绝 version 1/2/3 旧存档（envelope 或 state，提示「旧版存档与新规则不兼容，请重新开始。」）；format 不是 four-nights-v4 时拒绝；失败抛出中文错误",
+    "validateState": "(state) => 验证通过后的全新独立 state；仅接受 version 4（1/2/3 按旧版存档拒绝）；严格验证结构（cap 必须等于 capFor(id,night)，resets 不超过角色上限，energy 在 0..maxEnergy），并从 createState 按 actions 重放比较全部派生字段；非法则抛错",
+    "unlocked": "(state) => boolean；history 中 unlockAfter 的每个角色（codex 与 claude）都至少有一次 greedy 结算时为 true，此后 hidden 角色可选",
+    "capFor": "(id,night) => constants.characters[id].caps[night-1]，该角色当晚容量",
+    "drainFor": "(night) => constants.drains[night-1]，该晚零的夜耗（20→25→30→35，逐晚变饿）"
+  },
+  "stateRequired": {
+    "version": 4,
+    "night": 1,
+    "phase": "select",
+    "energy": 28,
+    "characters": {
+      "codex": {
+        "tokens": 90,
+        "cap": 90,
+        "visits": 0,
+        "affinity": 0,
+        "blockedNight": 0,
+        "resets": 0
+      },
+      "claude": {
+        "tokens": 30,
+        "cap": 30,
+        "visits": 0,
+        "affinity": 0,
+        "blockedNight": 0,
+        "resets": 0
+      },
+      "cursor": {
+        "tokens": 55,
+        "cap": 55,
+        "visits": 0,
+        "affinity": 0,
+        "blockedNight": 0,
+        "resets": 0
+      },
+      "workbuddy": {
+        "tokens": 110,
+        "cap": 110,
+        "visits": 0,
+        "affinity": 0,
+        "blockedNight": 0,
+        "resets": 0
+      }
+    },
+    "selected": null,
+    "choice": null,
+    "history": [],
+    "actions": [],
+    "lastResult": null,
+    "endingId": null
+  },
+  "resultFields": [
+    "night",
+    "character",
+    "mode",
+    "choice",
+    "cost",
+    "feed",
+    "energyBefore",
+    "energyAfter",
+    "wasted",
+    "visit",
+    "blockedNextNight",
+    "resetNextNight"
+  ],
+  "actions": {
+    "maxLength": 16,
+    "shapes": [
+      {
+        "type": "select",
+        "id": "角色 id"
+      },
+      {
+        "type": "choose",
+        "index": "数字 0 或 1"
+      },
+      {
+        "type": "commit",
+        "mode": "shallow、deep 或 greedy"
+      },
+      {
+        "type": "advance"
+      }
+    ],
+    "rules": "每次合法状态操作追加一条；preview、validateState、serialize、deserialize 不追加；同一晚依次 select、choose、commit、advance，失败操作不改变输入"
+  },
+  "previewRules": {
+    "cost": "shallow=10、deep=26、greedy=当前该角色全部 tokens",
+    "feed": "Math.floor(cost*constants.characters[id].nourish)；Codex/Claude/Cursor nourish=1，WorkBuddy nourish=0.5（便宜大碗，只顶一半饱）",
+    "drain": "drainFor(night)=drains[night-1]，第一至四晚分别为 20、25、30、35",
+    "allowed": "角色与模式合法，处于 select/talk/mode，角色未隐藏，blockedNight!==night；greedy 要求 tokens>0，非 greedy 要求 tokens>cost，禁止固定消耗意外清零",
+    "energyAfter": "raw=energy+feed-drain；energyAfter=clamp(raw,0,maxEnergy=60)",
+    "wasted": "max(0,raw-maxEnergy)；吃不下、溢出浪费的饱食，仅用于提示，不影响其他结算",
+    "tokensAfter": "tokens-cost；额度不足的非允许预览可能为负数，不得作为可提交状态",
+    "blockedNextNight": "mode==='greedy' 且 resetNextNight 为 false；第四晚同样为 true 并记录 blockedNight=5，但不会生成第五晚",
+    "fatal": "energyAfter<=0；fatal 不会使原本合法的模式变为不允许",
+    "warning": "energyAfter<=10 时提供中文提示，否则空字符串；fatal 提示明确说明归零、饥饿结局与再次确认；UI 负责提交前二次确认",
+    "invalid": "非法阶段、角色或模式返回 allowed:false、中文 reason、cost/feed/drain/wasted=0、energyAfter=当前 energy、fatal=false、warning=''、tokensAfter=null、blockedNextNight=false、resetNextNight=false",
+    "resetNextNight": "mode==='greedy' 且该角色 resets < constants.characters[id].resets（仅 Codex 第一次 greedy）；为 true 时 blockedNextNight=false，下一晚因 tokens=0 回满"
+  },
+  "recovery": "仅 advance 到下一晚时恢复，逐角色：cap=caps[新 night-1]；blockedNight===新 night 则 tokens=0；否则 tokens===0 则回满 cap（含 Codex 首次 greedy 后的一次性全局重置与锁定期结束后的恢复）；否则 tokens=min(cap,tokens+regen)。Codex regen=0 不自然恢复；Claude regen=100 即每晚回满且上限 30→38→46→54；Cursor 容量 55、regen=12；WorkBuddy 容量 110、regen=20。保留历史 blockedNight 数字，下一次锁定才覆写。最终或饥饿结局不恢复资源、不增加 night。",
+  "saveValidation": "只接受精确字段的普通对象与稠密数组；禁止未知或缺失字段、原型键（__proto__/prototype/constructor）、自定义原型、符号键、访问器、隐藏字段、非有限数、非整数、越界值；actions 最多 16 条、history 最多 4 条，逐步重放所有操作并比对整个 state，不信任外部派生字段。lastResult 与 history 条目字段为 resultFields（v4 新增 feed、wasted）。",
+  "fixtures": "tests/balance.cjs 导出 core、ids、endings、modes、fixedRoutes、demoRoute、runRoute、generateFixtures、legalOptions、rng。fixedRoutes 的每晚条目为 {id,choice,mode}；cursor/workbuddy 路线须先在前两晚 greedy codex 与 claude；runRoute(core,route) 仅经 select/choose/commit/advance 构造终态；generateFixtures() 返回六个结局的合法终态，不写磁盘。",
+  "boundaries": "本合同（v4）替代 v3 数值规则与旧 12 回合/100 进度合同。纯规则 UMD 导出 root.AfterhoursCore / Node require，无 story、DOM、时钟或随机依赖。剧情内容和 UI 阅读进度由其他模块负责，防止跳过尚未读完的剧情以及 fatal 二次确认是 UI 职责；规则层仅约束 select→talk→mode→result→select/ended。",
+  "unlock": "cursor 与 workbuddy 为 hidden：在 unlocked(state) 为 true（codex 与 claude 各被 greedy 过一次）之前不可 select，preview allowed:false；因此最早第三晚才能来访，story 中这两人至少有两段来访剧情。"
+}
