@@ -1,6 +1,8 @@
-name: 手动发布 GitHub Pages
+name: 发布 GitHub Pages
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
