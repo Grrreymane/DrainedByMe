@@ -16,7 +16,10 @@ const baseURL = pathToFileURL(distribution).href;
 const ids = core.ids;
 const modes = ['shallow', 'deep', 'greedy'];
 const eventKeys = ids.flatMap(id => modes.map(mode => `${id}_${mode}`));
-const assetKeys = [...ids, 'room', 'cover', ...eventKeys];
+const endingIds = ['hunger', 'household', ...ids];
+const endingKeys = endingIds.map(id => `ending_${id}`);
+const galleryAll = [...eventKeys, ...endingKeys];
+const assetKeys = [...ids, 'room', 'cover', ...eventKeys, ...endingKeys];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const clone = value => JSON.parse(JSON.stringify(value));
 const caseFilter = process.env.QA_CASE ? new RegExp(process.env.QA_CASE) : null;
@@ -84,7 +87,7 @@ async function shot(name, gallery = false) {
   await stable();
   const filename = path.join(output, name);
   if (gallery) {
-    // 收藏页是唯一有意截取的弹窗；临时展开滚动区，完整呈现十二张缩略图。
+    // 收藏页是唯一有意截取的弹窗；临时展开滚动区，完整呈现十二张事件图与六张结局图缩略图。
     const style = await page.addStyleTag({ content: 'dialog[open]{max-height:none!important;height:auto!important;position:absolute!important;top:16px!important;margin-top:0!important}dialog[open] .modal-body{max-height:none!important;overflow:visible!important}' });
     try { await stable(); await page.locator('#game-dialog').screenshot({ path: filename, animations: 'disabled' }); }
     finally { await style.evaluate(element => element.remove()); }
@@ -232,7 +235,8 @@ async function commitMode(mode) {
 async function galleryKeys() {
   await closeDialog();
   await click('open-gallery');
-  assert.equal(await page.locator('[data-action="gallery-image"]').count(), 12);
+  assert.equal(await page.locator('[data-action="gallery-image"]').count(), galleryAll.length);
+  assert.equal(await page.locator('.gallery-grid.is-endings [data-action="gallery-image"]').count(), endingKeys.length, '结局画面须作为独立一行排在事件图之后');
   const keys = await page.locator('.gallery-card.unlocked').evaluateAll(cards => cards.map(card => card.dataset.key).sort());
   await closeDialog();
   return keys;
@@ -280,10 +284,28 @@ async function readResult({ capture = false, inspect = async () => {} } = {}) {
   assert.deepEqual(await state(), core.advance(resultState));
   assert.equal((await view()).phase, (await state()).phase === 'ended' ? 'ending' : 'common');
 }
+// 后记一开始就显示这个结局自己的 CG（饥饿结局也是），实际解码、可见后收进相册的「结局画面」。
+async function visibleEndingCG(expected) {
+  const key = story.endingCg[expected];
+  assert.equal(key, `ending_${expected}`);
+  assert.equal((await view()).phase, 'ending');
+  const image = page.locator(`.scene-art .event-art[data-asset="${key}"]`);
+  await image.waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.scene-art .event-art').count(), 1, '后记只显示结局 CG，不再重放补给 CG 或封面');
+  await image.scrollIntoViewIfNeeded();
+  await image.evaluate(image => image.decode());
+  assert.equal(await image.evaluate(image => image.complete && image.naturalWidth > 0 && image.naturalHeight > 0), true);
+  await frames();
+  const collection = await galleryKeys();
+  assert(collection.includes(key), `${key} 实际显示并解码后仍未收进结局画面`);
+  await page.evaluate(() => scrollTo(0, 0));
+  return key;
+}
 async function finishEnding(expected) {
   const final = await state();
   assert.equal(final.phase, 'ended');
   assert.equal(final.endingId, expected);
+  await visibleEndingCG(expected);
   await readScene('ending', story.endings[expected].lines);
   assert.equal(await page.locator('.ending-title').innerText(), story.endings[expected].title);
   assert.equal((await view()).cursor, story.endings[expected].lines.length);
@@ -492,14 +514,14 @@ async function main() {
     await shot('preview-cover.png');
     return { protocol: new URL(page.url()).protocol, browserOffline: true };
   });
-  await check('十八张内嵌 WebP 均完整解码，封面与十二张 CG 不得缺失或冒充人物图', async () => {
+  await check('二十四张内嵌 WebP 均完整解码，封面、十二张事件 CG 与六张结局 CG 不得缺失或冒充人物图', async () => {
     const html = fs.readFileSync(distribution, 'utf8');
     const blocks = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)].filter(block => /\bid=["']asset-map["']/.test(block[1]));
     assert.equal(blocks.length, 1);
     const assignment = blocks[0][2].trim().match(/^window\.AfterhoursAssets\s*=\s*(\{[\s\S]*\});?$/);
     assert(assignment, '离线文件缺少 JSON 资产映射');
     const map = JSON.parse(assignment[1]);
-    assert.deepEqual(Object.keys(map).sort(), [...assetKeys].sort(), '必须包含全部十八张图，不接受缺图降级');
+    assert.deepEqual(Object.keys(map).sort(), [...assetKeys].sort(), '必须包含全部二十四张图，不接受缺图降级');
     const { checkWebp } = await import('../scripts/build.mjs');
     measuredAssets = assetKeys.map(key => {
       assert.match(map[key], /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/);
@@ -510,7 +532,7 @@ async function main() {
       assert(bytes.equals(fs.readFileSync(path.join(root, 'src/assets', `${key}.webp`))), `${key} 内嵌字节与源文件不一致`);
       return { name: `${key}.webp`, bytes: bytes.length, sha256: sha256(bytes) };
     });
-    assert.equal(new Set(measuredAssets.map(asset => asset.sha256)).size, 18, '封面与 CG 必须为独立图片，不得复制立绘或同一事件图充数');
+    assert.equal(new Set(measuredAssets.map(asset => asset.sha256)).size, assetKeys.length, '封面与 CG 必须为独立图片，不得复制立绘或同一事件图充数');
     const decoded = await page.evaluate(async keys => {
       const actualKeys = Object.keys(window.AfterhoursAssets || {}).sort();
       if (JSON.stringify(actualKeys) !== JSON.stringify([...keys].sort())) throw new Error('浏览器资产键与离线包不一致');
@@ -521,7 +543,7 @@ async function main() {
         return { key, width: image.naturalWidth, height: image.naturalHeight };
       }));
     }, assetKeys);
-    assert.equal(decoded.length, 18);
+    assert.equal(decoded.length, assetKeys.length);
     decodedAssets = decoded;
     return { decodedImages: decoded, missingAllowed: false };
   });
@@ -551,18 +573,18 @@ async function main() {
     }
     return { portraits };
   });
-  await check('十二张 CG 均为独立高清 16:9 场景', async () => {
-    assert(decodedAssets, '须先执行十八图完整解码检查');
-    const cgs = decodedAssets.filter(asset => eventKeys.includes(asset.key));
-    assert.equal(cgs.length, 12);
+  await check('十二张事件 CG 与六张结局 CG 均为独立高清 16:9 场景', async () => {
+    assert(decodedAssets, '须先执行全部内嵌图完整解码检查');
+    const cgs = decodedAssets.filter(asset => galleryAll.includes(asset.key));
+    assert.equal(cgs.length, 18);
     assert.deepEqual(cgs.filter(asset => asset.width * 9 !== asset.height * 16), [], '事件 CG 源图必须是 16:9，不能依靠 CSS 拉伸通过');
     assert(cgs.every(asset => asset.width >= 1600 && asset.height >= 900), '事件 CG 必须至少 1600×900，不能把旧小图放大充数');
-    return { checkedCGs: 12, aspectRatio: '16:9' };
+    return { checkedCGs: 18, aspectRatio: '16:9' };
   });
   await check('可选 manifest 字节数与 SHA-256 对照', async () => {
     const filename = path.join(output, 'asset-manifest.json');
-    if (!fs.existsSync(filename)) return { skipped: true, reason: '没有 manifest；十八图完整性与浏览器解码仍为必测项' };
-    assert(measuredAssets?.length === 18, '十八图测量未完成');
+    if (!fs.existsSync(filename)) return { skipped: true, reason: '没有 manifest；全部内嵌图完整性与浏览器解码仍为必测项' };
+    assert(measuredAssets?.length === assetKeys.length, '内嵌图测量未完成');
     const manifest = JSON.parse(fs.readFileSync(filename, 'utf8'));
     assert.deepEqual(manifest.assets.map(asset => asset.name).sort(), measuredAssets.map(asset => asset.name).sort());
     for (const measured of measuredAssets) {
@@ -575,7 +597,7 @@ async function main() {
     const bytes = fs.readFileSync(distribution);
     assert.equal(file.bytes, bytes.length);
     assert.equal(file.sha256, sha256(bytes));
-    return { checkedAssets: 18, distributionHashMatched: true };
+    return { checkedAssets: assetKeys.length, distributionHashMatched: true };
   });
   await check('玩法、成年人物资料、弹窗焦点与离线许可', async () => {
     await click('help');
@@ -736,7 +758,8 @@ async function main() {
     await readResult();
     await finishEnding('hunger');
     assert.deepEqual(await state(), runRoute(core, fixedRoutes.hunger));
-    assert.deepEqual(await galleryKeys(), collected, '死亡片段不能增加正常补给收藏');
+    assert.deepEqual((await galleryKeys()).filter(key => eventKeys.includes(key)), collected.filter(key => eventKeys.includes(key)), '死亡片段不能增加正常补给收藏');
+    assert((await galleryKeys()).includes('ending_hunger'), '饥饿结局 CG 须在后记显示后收进相册');
     return { nights: 3, ending: 'hunger', nextClicks: routeReads };
   });
   await check('真实文件导入：坏档、派生状态篡改、phase/cursor/readCount 篡改与旧 v1/v2/v3 全部拒绝且不改当前局', async () => {
@@ -808,21 +831,29 @@ async function main() {
       return playRoute(route, id);
     });
   }
-  await check('十二 CG 收藏、新局、读档和刷新均保留，截图不冒充新增结局图', async () => {
-    assert.deepEqual(await galleryKeys(), [...eventKeys].sort());
+  await check('十二事件 CG 与六结局 CG 收藏、新局、读档和刷新均保留', async () => {
+    assert.deepEqual(await galleryKeys(), [...galleryAll].sort(), '所有路线读完后须收齐十二张事件图和六张结局图');
+    await click('open-gallery');
+    assert.match(await page.locator('#game-dialog .modal-body > p').first().innerText(), /事件 12 \/ 12 · 结局 6 \/ 6/);
+    await closeDialog();
     await click('open-gallery'); await shot('cg-gallery.png', true);
     await click('gallery-image', '[data-key="claude_deep"]');
     await stable();
     assert.equal(await page.locator('.gallery-full[data-asset="claude_deep"]').count(), 1);
-    assert.match(await page.locator('.gallery-caption').innerText(), /不是新增结局图/);
+    assert.match(await page.locator('.gallery-caption').innerText(), /补给场景的事件图/);
+    await click('open-gallery');
+    await click('gallery-image', '[data-key="ending_household"]');
+    await stable();
+    assert.equal(await page.locator('.gallery-full[data-asset="ending_household"]').count(), 1);
+    assert.match(await page.locator('.gallery-caption').innerText(), new RegExp(story.endings.household.title));
     await closeDialog(); await newGame();
-    assert.deepEqual(await galleryKeys(), [...eventKeys].sort());
+    assert.deepEqual(await galleryKeys(), [...galleryAll].sort());
     await page.reload(); await click('continue-auto');
-    assert.deepEqual(await galleryKeys(), [...eventKeys].sort());
+    assert.deepEqual(await galleryKeys(), [...galleryAll].sort());
     assert(exported, '需要真实导出的存档');
     await importFile(exported);
-    assert.deepEqual(await galleryKeys(), [...eventKeys].sort());
-    return { collected: 12, physicalDeviceTested: false };
+    assert.deepEqual(await galleryKeys(), [...galleryAll].sort());
+    return { collected: { events: 12, endings: 6 }, physicalDeviceTested: false };
   });
 
   for (const width of [390, 320]) {

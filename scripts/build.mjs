@@ -6,7 +6,8 @@ import { createHash } from 'node:crypto';
 
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const assetNames = ['codex', 'claude', 'cursor', 'workbuddy', 'room', 'cover',
-  ...['codex', 'claude', 'cursor', 'workbuddy'].flatMap(id => ['shallow', 'deep', 'greedy'].map(mode => `${id}_${mode}`))];
+  ...['codex', 'claude', 'cursor', 'workbuddy'].flatMap(id => ['shallow', 'deep', 'greedy'].map(mode => `${id}_${mode}`)),
+  ...['hunger', 'household', 'codex', 'claude', 'cursor', 'workbuddy'].map(id => `ending_${id}`)];
 export const scriptPaths = ['src/data/story.js', 'src/engine/core.js', 'src/ui/app.js'];
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const order = (a, b) => a < b ? -1 : a > b ? 1 : 0;
@@ -209,7 +210,7 @@ export async function build() {
   assertPublishable(html, '发行页面');
   assert.deepEqual(html.match(/@@TOK_[A-Z0-9_]+@@/g), ['@@TOK_ASSETS@@'], '只能留下唯一资产占位符');
   const actualAssets = (await fs.readdir(path.join(root, 'src/assets'))).filter((file) => file.endsWith('.webp')).sort(order);
-  assert.deepEqual(actualAssets, assetNames.map((name) => `${name}.webp`).sort(order), 'WebP 资产须为四张立绘、一张客厅、一张封面和十二张事件 CG');
+  assert.deepEqual(actualAssets, assetNames.map((name) => `${name}.webp`).sort(order), 'WebP 资产须为四张立绘、一张客厅、一张封面、十二张事件 CG 和六张结局 CG');
   const assets = [];
   const assetsMap = {};
   for (const name of assetNames) {

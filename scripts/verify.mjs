@@ -96,7 +96,7 @@ export async function verify() {
     const match = maps[0][2].match(/^window\.AfterhoursAssets = (\{[\s\S]*\});$/);
     assert(match, 'asset-map 不是预期 JSON 赋值');
     map = JSON.parse(match[1]);
-    assert.deepEqual(Object.keys(map), assetNames, '映射必须包含全部角色、客厅、封面和十二张事件 CG');
+    assert.deepEqual(Object.keys(map), assetNames, '映射必须包含全部角色、客厅、封面、十二张事件 CG 和六张结局 CG');
     assert.equal((html.match(/data:image\/webp;base64,/g) || []).length, assetNames.length, 'WebP data URI 数量须与资产合同一致');
     assert(!html.includes('@@TOK_'), '仍有占位符');
     assert(!/<script\b[^>]*\b(?:src\s*=|defer\b)/i.test(html), '仍有 script src 或 defer');

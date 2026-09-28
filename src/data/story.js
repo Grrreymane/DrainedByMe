@@ -1071,6 +1071,9 @@
       workbuddy: { shallow: 'workbuddy_shallow', deep: 'workbuddy_deep', greedy: 'workbuddy_greedy' }
     },
 
+    // 每个结局自己的一张结局 CG（后记显示，收进相册的「结局画面」）。
+    endingCg: { hunger: 'ending_hunger', household: 'ending_household', codex: 'ending_codex', claude: 'ending_claude', cursor: 'ending_cursor', workbuddy: 'ending_workbuddy' },
+
     sources: []
   };
 }));
