@@ -111,3 +111,7 @@ AI 美术的授权、商用条件与可保护性仍有不确定性，后续技�
 ### visual-v9 结局 CG 来源补记（2026-09-27）
 
 新增六张结局 CG（`src/assets/ending_*.webp`，2560×1440 RGB WebP），与其他 CG 同样经 LightAI 服务调用 nano-banana pro（`gemini-3-pro-image-preview`）生成，并以既有立绘、母版头像、零的造型裁图和既有 CG 作参考；部分经同一服务的图像编辑做局部修正，本地只做等比缩放、镜像补边与 WebP 编码。审看记录见 `docs/design/art-log.md` 第 7 节。上文关于 AI 生成素材的来源、权利不确定性与发行要求同样适用于这六张图，本补记不扩大任何授权承诺。
+
+### visual-v10 立绘与事件 CG 重绘来源补记（2026-09-28）
+
+`src/assets/claude.webp`、`cursor.webp`（全身版）及七张事件 CG（`codex_shallow`、`claude_shallow`、`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy`）经 LightAI 服务调用 nano-banana pro（`gemini-3-pro-image-preview`）以封面和既有图为参考重新生成或编辑，立绘经同一服务的 BiRefNet-HR-matting 去背景；本地只做缩放、补边与 WebP 编码。审看记录见 `docs/design/art-log.md` 第 8 节。上文关于 AI 生成素材的来源、权利不确定性与发行要求同样适用，本补记不扩大任何授权承诺。

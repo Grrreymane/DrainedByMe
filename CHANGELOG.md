@@ -2,6 +2,11 @@
 
 当前本地开发版本为 **v0.3.0**。日期表示本地变更记录，不表示 Git 标签、远程发布或线上部署；制作流程、源码实现与最终验收分别记录。
 
+## 全身立绘与事件 CG 重绘（visual-v10）— 2026-09-28
+
+- **立绘**：Claude、Cursor 换成头到鞋的全身版（与 Codex、WorkBuddy 同样取景），与封面服装一致；BiRefNet-HR-matting 去背景，1120×1680 RGBA WebP。`src/ui/styles.css` 中 claude / cursor 的 `--eye`、`--head`、`--cx` 按新图重测，codex / workbuddy 未动。
+- **事件 CG**：重绘 `codex_shallow`、`claude_shallow`、`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy`：脸对齐封面、日系画风、腮红减淡；Codex greedy 改为傲娇得意的坏笑，Claude greedy 为含泪得意地比“五”，WorkBuddy greedy 赤裸上身、体格精瘦。成品 2560×1440 RGB WebP。旧图存于 `_archive/2026-09-28/src-assets/`。详见 `docs/design/art-log.md` 第 8 节。
+
 ## 结局 CG（visual-v9）— 2026-09-27
 
 - **六张结局 CG**：`ending_hunger`、`ending_household`、`ending_codex`、`ending_claude`、`ending_cursor`、`ending_workbuddy`，温馨画面、全员穿戴整齐；经 LightAI（nano-banana pro）生成，12 个服务任务（6 首稿、6 次重画或局部编辑），成品 2560×1440 RGB WebP（quality 93、method 6）。审看记录见 `docs/design/art-log.md` 第 7 节。

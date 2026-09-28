@@ -213,3 +213,11 @@ UI 已审看并完成首轮断网浏览器验收；最终测试结论、文件�
 - 修正：`household` 首稿出现两只零，编辑去掉前景那只；`codex` 首稿把她画成狼头并自带纸框，重画后再把袖口像字母的扣子改成圆扣；`hunger` 去掉眼镜腿旁露出的人耳、胡茬收到下巴；`cursor` 让零抬眼看她、去掉玻璃里手机的重影；`workbuddy` 去掉模型自绘的纸框和像字迹的笔记本线条、减轻胡茬。`claude` 首稿直接采用。
 - 残留小瑕疵（已接受）：`household` 与 `workbuddy` 中 WorkBuddy 下颌两侧仍有少量浅淡胡茬；`cursor` 手机更多朝向她自己；`codex` 远处晨雾里有几个极淡的模糊人影；`claude` 里的零略大、半坐在她腿边。
 - 成品：源图 2752×1536 整图等比缩到 2560×1429，上下约 5 像素镜像补边到 2560×1440，不裁人物、不拉伸；RGB WebP quality 93、method 6。现行运行时资产为二十四项。逐张审看结论与任务编号见 `.cache/art/visual-v9-endings/review.json`，总览 `outputs/art-v9-ending-overview.jpg`；签名 URL 与服务原始响应只留在 `.cache/`。
+
+## 8. visual-v10：全身立绘与七张事件 CG 重绘（2026-09-28）
+
+- 基准：封面 `outputs/cover-v6-source.png` 作为四人脸型、发型、服装与比例的母本，每个任务都上传封面全图或封面人物特写作参考；画风统一为日系动画插画、细棕线、低饱和、暖纸色，腮红最多淡粉。
+- 立绘：Claude、Cursor 以原立绘＋封面＋封面特写＋Codex 全身立绘（取景参考）生成 2:3 全身版（1696×2528），再用 `BiRefNet-HR-matting`（`expand=-1`、`blur_radius=0.5`）去背景，Pillow 保留 Alpha 等比放入 1120×1680 透明画布，WebP quality 93、method 6、exact。严格 Alpha=0/255：Claude 1,317,032 / 534,113；Cursor 1,419,081 / 427,615。`styles.css` 取景值按新图实测：claude `--eye .132 --head .15 --cx .47`，cursor `--eye .117 --head .15 --cx .485`；codex / workbuddy 未改。
+- CG：`codex_shallow`、`claude_shallow`、`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy` 以现有 CG＋封面＋封面特写重绘，部分再做局部编辑（降腮红、改表情、修零、改发型）。`cursor_shallow` 首稿被服务以内容策略拒绝，改为温和描述重画。成品 2560×1440 RGB WebP（与 v8/v9 相同的等比缩放＋镜像补边）。
+- 服务任务：共 17 次提交（13 次生图/编辑，其中 1 次被拒；2 次立绘生图；2 次去背景），无鉴权错误。
+- 残留小瑕疵（已接受）：`codex_shallow` 触手搭在手腕上而非缠绕；`cursor_shallow` 脸略显年轻；`workbuddy_shallow`/`workbuddy_greedy` 下颌两侧仍有少量胡茬；`claude_greedy` 腮红为中等淡粉。逐张结论见 `.cache/art/visual-v10/review.json`，总览 `outputs/art-v10-overview.jpg`，被替换的旧图存于 `_archive/2026-09-28/src-assets/`。
