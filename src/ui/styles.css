@@ -542,7 +542,7 @@ button.select-person.is-resting .select-portrait { filter: grayscale(1); opacity
 /* 立绘取景：四张图原始取景不一（Claude、Cursor 为半身，Codex、WorkBuddy 为全身），
    按每人实测的眼线、头长与脸中心统一缩放定位，让四人头一样大、视线同高。
    --eye / --head / --cx 为占立绘高（宽）的比例；容器用 --frame-eye / --frame-head 指定眼线与头长占容器高的比例。 */
-img[data-asset="codex"] { --eye: .145; --head: .15; --cx: .44; }
+img[data-asset="codex"] { --eye: .125; --head: .11; --cx: .44; }
 img[data-asset="claude"] { --eye: .19; --head: .195; --cx: .45; }
 img[data-asset="cursor"] { --eye: .20; --head: .19; --cx: .445; }
 img[data-asset="workbuddy"] { --eye: .11; --head: .13; --cx: .355; }
