@@ -2,6 +2,14 @@
 
 当前本地开发版本为 **v0.3.0**。日期表示本地变更记录，不表示 Git 标签、远程发布或线上部署；制作流程、源码实现与最终验收分别记录。
 
+## 事件 CG 逐张返修（visual-v12–v16）— 2026-09-28
+
+- 按用户逐张意见重画并替换：`workbuddy_shallow`（按原始人设彻底重画，v12）、`claude_greedy`（闭眼抱紧零、一滴泪、微笑，v13）、`codex_shallow`（v14）、`codex_greedy`（与零对视、触手贴脸、手指相勾，强调互动，v16）。`cursor_shallow`、`workbuddy_greedy` 采用 v11 版本。被替换的旧图存于 `_archive/2026-09-28/src-assets-v11/`。
+
+## 事件 CG 画风统一（visual-v11）— 2026-09-28
+
+- 按 `claude_shallow` 与 deep CG 的水彩纸画风重绘并替换 `cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy`：Codex greedy 改为自然的得意倦笑，Claude greedy 为含泪的开心笑；成品 2560×1440 RGB WebP。`codex_shallow` 三次尝试均不合格，保留 v10。共 14 个服务任务。v10 旧图存于 `_archive/2026-09-28/src-assets-v10/`，详见 `docs/design/art-log.md` 第 9 节。
+
 ## 全身立绘与事件 CG 重绘（visual-v10）— 2026-09-28
 
 - **立绘**：Claude、Cursor 换成头到鞋的全身版（与 Codex、WorkBuddy 同样取景），与封面服装一致；BiRefNet-HR-matting 去背景，1120×1680 RGBA WebP。`src/ui/styles.css` 中 claude / cursor 的 `--eye`、`--head`、`--cx` 按新图重测，codex / workbuddy 未动。

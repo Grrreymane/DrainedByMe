@@ -115,3 +115,7 @@ AI 美术的授权、商用条件与可保护性仍有不确定性，后续技�
 ### visual-v10 立绘与事件 CG 重绘来源补记（2026-09-28）
 
 `src/assets/claude.webp`、`cursor.webp`（全身版）及七张事件 CG（`codex_shallow`、`claude_shallow`、`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy`）经 LightAI 服务调用 nano-banana pro（`gemini-3-pro-image-preview`）以封面和既有图为参考重新生成或编辑，立绘经同一服务的 BiRefNet-HR-matting 去背景；本地只做缩放、补边与 WebP 编码。审看记录见 `docs/design/art-log.md` 第 8 节。上文关于 AI 生成素材的来源、权利不确定性与发行要求同样适用，本补记不扩大任何授权承诺。
+
+### visual-v11 事件 CG 重绘来源补记（2026-09-28）
+
+`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy` 五张事件 CG 经 LightAI 服务调用 nano-banana pro（`gemini-3-pro-image-preview`）以既有 CG（含 v8 旧版）、封面与已认可 CG 为参考重新生成或编辑；本地只做缩放、补边与 WebP 编码。审看记录见 `docs/design/art-log.md` 第 9 节。上文关于 AI 生成素材的来源、权利不确定性与发行要求同样适用，本补记不扩大任何授权承诺。
