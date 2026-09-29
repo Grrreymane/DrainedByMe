@@ -221,3 +221,11 @@ UI 已审看并完成首轮断网浏览器验收；最终测试结论、文件�
 - CG：`codex_shallow`、`claude_shallow`、`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy` 以现有 CG＋封面＋封面特写重绘，部分再做局部编辑（降腮红、改表情、修零、改发型）。`cursor_shallow` 首稿被服务以内容策略拒绝，改为温和描述重画。成品 2560×1440 RGB WebP（与 v8/v9 相同的等比缩放＋镜像补边）。
 - 服务任务：共 17 次提交（13 次生图/编辑，其中 1 次被拒；2 次立绘生图；2 次去背景），无鉴权错误。
 - 残留小瑕疵（已接受）：`codex_shallow` 触手搭在手腕上而非缠绕；`cursor_shallow` 脸略显年轻；`workbuddy_shallow`/`workbuddy_greedy` 下颌两侧仍有少量胡茬；`claude_greedy` 腮红为中等淡粉。逐张结论见 `.cache/art/visual-v10/review.json`，总览 `outputs/art-v10-overview.jpg`，被替换的旧图存于 `_archive/2026-09-28/src-assets/`。
+
+## 9. visual-v11：事件 CG 画风统一重绘（2026-09-28）
+
+- 背景：v10 七张里只有 `claude_shallow` 与整套 CG 画风一致；其余六张偏平涂、偏亮，`claude_greedy` / `codex_greedy` 表情怪异。本轮重做这六张，`claude_shallow` 与其他图不动。
+- 做法：画风参考固定为已认可的 `claude_shallow`＋同角色 deep CG（水彩纸纹、暖纸色、低饱和、细棕线），脸型参考为 `cover.webp` 的人物特写。只用文字描述场景的首稿画风漂移明显；改为以 v8 同场景原图（已在套图画风内，存于 `_archive/2026-09-28/src-assets/`）为底重画脸与表情，再做局部编辑，画风才对齐。
+- 服务任务：14 次（nano-banana pro，16:9、2K），无拒绝、无鉴权错误；每张最多 3 次。
+- 结果：`cursor_shallow`、`workbuddy_shallow`、`codex_greedy`、`claude_greedy`、`workbuddy_greedy` 已替换（2560×1440 RGB WebP，q93、m6，与前几轮同样等比缩放＋镜像补边）；v10 版本存于 `_archive/2026-09-28/src-assets-v10/`。`codex_shallow` 三次都不合格（零画成摊开的史莱姆 / 狼鼻子 / 触手脱离身体），保留 v10 未换。
+- 残留瑕疵（已接受）：`claude_greedy` 脸比封面略显年轻、衬衫画成无袖、裙子偏蓝灰；`workbuddy_shallow` 耳朵垂在脸侧没有遮住半张脸、腮红中等、脸略写实（与 `workbuddy_deep` 一致）；`codex_greedy` 手机屏幕是暗的；`workbuddy_greedy` 眼镜歪得不明显、零偏淡紫。逐张结论见 `.cache/art/visual-v11/review.json`，总览 `outputs/art-v11-overview.jpg`。
